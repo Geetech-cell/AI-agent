@@ -1,0 +1,16 @@
+{
+    "lineId": "Line-A",
+    "defectRate": 0.08,
+    "temperature": 92,
+    "vibration": 8.5,
+    "toolWear": 0.78,
+    "materialVariance": 0.12,
+    "machineId": "CNC-001",
+    "operatingHours": 4800,
+    "acoustic": 78.3,
+    "orderId": "ORD-5432",
+    "customization": true,
+    "priority": "HIGH",
+    "leadTime": 14,
+    "estimatedCost": 6500
+}

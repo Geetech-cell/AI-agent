@@ -1,0 +1,366 @@
+{
+  "name": "AutoParts AI Agent System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Production Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.autoparts.example/production/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-production-data",
+      "name": "Get Production Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.defectRate}}",
+              "operation": "largerEqual",
+              "value2": "0.05"
+            }
+          ]
+        }
+      },
+      "id": "check-defect-threshold",
+      "name": "Quality Control Agent - Check Defects",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Quality Control Agent - Vision Analysis\nconst productionData = $input.all();\nconst results = [];\n\nfor (const item of productionData) {\n  const defectAnalysis = {\n    timestamp: new Date().toISOString(),\n    lineId: item.json.lineId,\n    defectRate: item.json.defectRate,\n    defectTypes: {\n      dimensional: Math.random() * 0.05,\n      surface: Math.random() * 0.03,\n      material: Math.random() * 0.02\n    },\n    rootCause: identifyRootCause(item.json),\n    recommendation: generateRecommendation(item.json),\n    confidence: 0.94\n  };\n  \n  results.push({ json: defectAnalysis });\n}\n\nfunction identifyRootCause(data) {\n  if (data.temperature > 85) return 'Temperature deviation';\n  if (data.toolWear > 0.7) return 'Tool wear exceeded threshold';\n  if (data.materialVariance > 0.15) return 'Material quality variance';\n  return 'Process parameter drift';\n}\n\nfunction generateRecommendation(data) {\n  const causes = identifyRootCause(data);\n  const recommendations = {\n    'Temperature deviation': 'Adjust cooling system, reduce cycle time by 8%',\n    'Tool wear exceeded threshold': 'Schedule immediate tool replacement on Line ' + data.lineId,\n    'Material quality variance': 'Alert supplier, switch to backup material batch',\n    'Process parameter drift': 'Recalibrate sensors, run validation batch'\n  };\n  return recommendations[causes] || 'Conduct detailed process audit';\n}\n\nreturn results;"
+      },
+      "id": "qca-vision-analysis",
+      "name": "QCA - Vision Analysis & Root Cause",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Predictive Maintenance Agent - Equipment Health Monitoring\nconst equipmentData = $input.all();\nconst predictions = [];\n\nfor (const item of equipmentData) {\n  const healthScore = calculateHealthScore(item.json);\n  const failureProbability = predictFailure(item.json);\n  \n  const maintenance = {\n    timestamp: new Date().toISOString(),\n    machineId: item.json.machineId,\n    healthScore: healthScore,\n    failureProbability: failureProbability,\n    remainingUsefulLife: estimateRUL(item.json),\n    sensorReadings: {\n      vibration: item.json.vibration || Math.random() * 10,\n      temperature: item.json.temperature || 65 + Math.random() * 30,\n      acousticSignature: item.json.acoustic || Math.random() * 100\n    },\n    maintenanceAction: determineAction(failureProbability),\n    priority: getPriority(failureProbability),\n    estimatedDowntime: failureProbability > 0.7 ? '4 hours' : '1 hour'\n  };\n  \n  predictions.push({ json: maintenance });\n}\n\nfunction calculateHealthScore(data) {\n  const vibScore = 1 - (data.vibration || 5) / 10;\n  const tempScore = 1 - Math.abs((data.temperature || 75) - 70) / 30;\n  const wearScore = 1 - (data.toolWear || 0.3);\n  return ((vibScore + tempScore + wearScore) / 3 * 100).toFixed(1);\n}\n\nfunction predictFailure(data) {\n  let probability = 0;\n  if (data.vibration > 8) probability += 0.3;\n  if (data.temperature > 90) probability += 0.25;\n  if (data.toolWear > 0.75) probability += 0.35;\n  if (data.operatingHours > 5000) probability += 0.1;\n  return Math.min(probability, 0.95).toFixed(2);\n}\n\nfunction estimateRUL(data) {\n  const baseLife = 6000; // hours\n  const used = data.operatingHours || 2000;\n  const degradation = (data.vibration || 5) / 10 + (data.toolWear || 0.3);\n  const remaining = baseLife - used - (degradation * 500);\n  return Math.max(remaining, 0).toFixed(0) + ' hours';\n}\n\nfunction determineAction(probability) {\n  if (probability > 0.7) return 'URGENT: Schedule immediate maintenance';\n  if (probability > 0.4) return 'Plan maintenance within 48 hours';\n  if (probability > 0.2) return 'Monitor closely, schedule preventive maintenance';\n  return 'Continue normal operations';\n}\n\nfunction getPriority(probability) {\n  if (probability > 0.7) return 'CRITICAL';\n  if (probability > 0.4) return 'HIGH';\n  if (probability > 0.2) return 'MEDIUM';\n  return 'LOW';\n}\n\nreturn predictions;"
+      },
+      "id": "pma-health-monitoring",
+      "name": "PMA - Equipment Health Prediction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Production Optimization Agent - Dynamic Scheduling\nconst orders = $input.all();\nconst optimizedSchedule = [];\n\n// Multi-objective optimization simulation\nfor (const order of orders) {\n  const optimization = {\n    timestamp: new Date().toISOString(),\n    orderId: order.json.orderId || 'ORD-' + Math.floor(Math.random() * 10000),\n    customerPriority: order.json.priority || 'STANDARD',\n    isCustom: order.json.customization || false,\n    \n    // Original parameters\n    originalLeadTime: order.json.leadTime || 14,\n    originalCost: order.json.estimatedCost || 5000,\n    \n    // Optimized parameters\n    optimizedSchedule: generateOptimalSchedule(order.json),\n    optimizedLeadTime: calculateOptimizedLeadTime(order.json),\n    optimizedCost: calculateOptimizedCost(order.json),\n    \n    // Resource allocation\n    assignedLine: selectOptimalLine(order.json),\n    assignedShift: selectOptimalShift(order.json),\n    materialAllocation: allocateMaterials(order.json),\n    \n    // Performance metrics\n    throughputImpact: '+22%',\n    utilizationRate: '87%',\n    onTimeDeliveryProb: 0.95\n  };\n  \n  optimizedSchedule.push({ json: optimization });\n}\n\nfunction generateOptimalSchedule(order) {\n  const startDate = new Date();\n  startDate.setDate(startDate.getDate() + 1);\n  const endDate = new Date(startDate);\n  endDate.setDate(endDate.getDate() + calculateOptimizedLeadTime(order));\n  \n  return {\n    startDate: startDate.toISOString().split('T')[0],\n    endDate: endDate.toISOString().split('T')[0],\n    productionSlots: allocateSlots(order)\n  };\n}\n\nfunction calculateOptimizedLeadTime(order) {\n  const baseLead = order.leadTime || 14;\n  const reduction = order.customization ? 0.4 : 0.3; // 40% reduction for custom, 30% for standard\n  return Math.ceil(baseLead * (1 - reduction));\n}\n\nfunction calculateOptimizedCost(order) {\n  const baseCost = order.estimatedCost || 5000;\n  const efficiency = 0.88; // 12% cost reduction through optimization\n  return Math.round(baseCost * efficiency);\n}\n\nfunction selectOptimalLine(order) {\n  const lines = ['Line-A', 'Line-B', 'Line-C', 'Line-D', 'Line-E'];\n  // Simulate intelligent line selection based on current utilization\n  return lines[Math.floor(Math.random() * lines.length)];\n}\n\nfunction selectOptimalShift(order) {\n  const priority = order.priority || 'STANDARD';\n  if (priority === 'URGENT') return 'Shift-1 (Premium)';\n  if (priority === 'HIGH') return 'Shift-2 (Standard)';\n  return 'Shift-3 (Economy)';\n}\n\nfunction allocateMaterials(order) {\n  return {\n    rawMaterial: 'Batch-' + Math.floor(Math.random() * 100),\n    qualityGrade: 'A',\n    inventoryStatus: 'Available',\n    supplierLeadTime: '2 days'\n  };\n}\n\nfunction allocateSlots(order) {\n  const slots = [];\n  const operations = ['Machining', 'Assembly', 'Quality Check', 'Packaging'];\n  operations.forEach((op, idx) => {\n    slots.push({\n      operation: op,\n      duration: (2 + Math.random() * 4).toFixed(1) + ' hours',\n      sequence: idx + 1\n    });\n  });\n  return slots;\n}\n\nreturn optimizedSchedule;"
+      },
+      "id": "poa-scheduling",
+      "name": "POA - Dynamic Production Scheduling",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 600]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "quality_alerts",
+        "columns": "timestamp, line_id, defect_rate, root_cause, recommendation, confidence",
+        "options": {}
+      },
+      "id": "store-quality-data",
+      "name": "Store Quality Analysis",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [1050, 100]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "maintenance_predictions",
+        "columns": "timestamp, machine_id, health_score, failure_probability, maintenance_action, priority",
+        "options": {}
+      },
+      "id": "store-maintenance-data",
+      "name": "Store Maintenance Predictions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "production_schedule",
+        "columns": "timestamp, order_id, assigned_line, optimized_lead_time, optimized_cost, on_time_delivery_prob",
+        "options": {}
+      },
+      "id": "store-schedule-data",
+      "name": "Store Optimized Schedule",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [850, 600]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.failureProbability}}",
+              "operation": "largerEqual",
+              "value2": 0.7
+            }
+          ]
+        }
+      },
+      "id": "check-critical-maintenance",
+      "name": "Check Critical Maintenance",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "channel": "#maintenance-alerts",
+        "text": "🚨 CRITICAL MAINTENANCE ALERT\n\nMachine: {{$json.machineId}}\nHealth Score: {{$json.healthScore}}%\nFailure Probability: {{$json.failureProbability}}\nAction Required: {{$json.maintenanceAction}}\nEstimated Downtime: {{$json.estimatedDowntime}}\n\nPriority: {{$json.priority}}",
+        "otherOptions": {}
+      },
+      "id": "send-slack-alert",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1250, 350]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "channel": "#quality-control",
+        "text": "⚠️ QUALITY ALERT\n\nProduction Line: {{$json.lineId}}\nDefect Rate: {{$json.defectRate}}%\nRoot Cause: {{$json.rootCause}}\nRecommendation: {{$json.recommendation}}\nConfidence: {{$json.confidence}}",
+        "otherOptions": {}
+      },
+      "id": "send-quality-alert",
+      "name": "Send Quality Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1250, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://api.autoparts.example/dashboard/update",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "agentType",
+              "value": "multi-agent-system"
+            },
+            {
+              "name": "metrics",
+              "value": "={{$json}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-dashboard",
+      "name": "Update Real-time Dashboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/production-event",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Production Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 500],
+      "webhookId": "autoparts-production-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"AI agents processing production event\", \"timestamp\": $now } }}",
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 500]
+    }
+  ],
+  "connections": {
+    "Production Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Production Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Production Data": {
+      "main": [
+        [
+          {
+            "node": "Quality Control Agent - Check Defects",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PMA - Equipment Health Prediction",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POA - Dynamic Production Scheduling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Control Agent - Check Defects": {
+      "main": [
+        [
+          {
+            "node": "QCA - Vision Analysis & Root Cause",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QCA - Vision Analysis & Root Cause": {
+      "main": [
+        [
+          {
+            "node": "Store Quality Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Quality Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PMA - Equipment Health Prediction": {
+      "main": [
+        [
+          {
+            "node": "Store Maintenance Predictions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Critical Maintenance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POA - Dynamic Production Scheduling": {
+      "main": [
+        [
+          {
+            "node": "Store Optimized Schedule",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Real-time Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Critical Maintenance": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Production Event Webhook": {
+      "main": [
+        [
+          {
+            "node": "Quality Control Agent - Check Defects",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PMA - Equipment Health Prediction",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POA - Dynamic Production Scheduling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Real-time Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-25T08:53:17.000Z",
+  "versionId": "1"
+}
